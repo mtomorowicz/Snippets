@@ -1,0 +1,43 @@
+// registration module example
+
+public class AutofacModule : Module
+{
+    private string _connString;
+    public AutofacModule(string connString)
+    {
+        _connString = connString;
+    }
+
+    protected override void Load(ContainerBuilder builder)
+    {
+        builder.Register(x => new WorkshopContext(_connString)).As<IWorkshopContext>().InstancePerRequest();
+
+        builder.RegisterType<FbDataRepository>().As<IFbDataRepository>().InstancePerRequest().PropertiesAutowired();
+
+        base.Load(builder);
+    }
+}
+
+
+// config class - typical for MVC projects
+
+public class AutofacConfig
+{
+    public static void ConfigureContainer()
+    {
+        var afBuilder = new ContainerBuilder();
+
+        afBuilder.RegisterControllers(Assembly.GetExecutingAssembly()).PropertiesAutowired(); // ! must have for properties injection to work as expected
+        afBuilder.RegisterFilterProvider();
+        afBuilder.RegisterSource(new ViewRegistrationSource());
+        afBuilder.RegisterModule(new AutofacModule("WorkshopDB"));
+
+        var container = afBuilder.Build();
+
+        DependencyResolver.SetResolver(new AutofacDependencyResolver(container));
+    }
+}
+
+// global asax app_stat entry
+
+AutofacConfig.ConfigureContainer()
