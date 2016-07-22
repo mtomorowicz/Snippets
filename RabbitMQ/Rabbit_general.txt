@@ -1,0 +1,179 @@
+// basic connection factory with dynamic exchange & queue creation
+var connFactory = new ConnectionFactory
+{
+	HostName = "localhost",
+	UserName = "guest",
+	Password = "guest"
+};
+
+using (var cnn = connFactory.CreateConnection())
+{
+	var model = cnn.CreateModel();
+
+	model.ExchangeDeclare("myDynamicExchng", ExchangeType.Topic);
+	model.QueueDeclare("myDynamicQue", true, false, false, null);
+	model.QueueBind("myDynamicQue", "myDynamicExchng", "myRoutingKey");
+}
+
+
+// sending message with basic properties (no persistence)
+var connFactory = new ConnectionFactory
+{
+	HostName = "localhost",
+	UserName = "guest",
+	Password = "guest"
+};
+
+using (var cnn = connFactory.CreateConnection())
+{
+	var model = connection.CreateModel();
+
+	var properties = model.CreateBasicProperties();
+	properties.SetPersistent(false); // 
+
+	//Serialize
+	byte[] messageBuffer = Encoding.Default.GetBytes("this is my message");
+
+	//Send message
+	model.BasicPublish(ExchangeName, QueueName, properties, messageBuffer);
+}
+
+// setup target virtual host / port for connection to broker
+var connectionFactory = new ConnectionFactory
+{
+	HostName = HostName,
+	UserName = UserName,
+	Password = Password,
+	VirtualHost = VirtualHost,
+	Port = Port
+};
+
+// basic message consumer (exchange type - DIRECT) -> One way messaging pattern
+var _connection = _connectionFactory.CreateConnection();
+var _model = _connection.CreateModel();
+var _model.BasicQos(0, 1, false); // specify if batch or on-at-the-time message consuming
+
+var consumer = new QueueingBasicConsumer(_model);
+_model.BasicConsume(QueueName, false, consumer);
+
+while (Enabled)
+{
+	//Get next message
+	var deliveryArgs = (BasicDeliverEventArgs)consumer.Queue.Dequeue();
+
+	//Serialize message
+	var message = Encoding.Default.GetString(deliveryArgs.Body);
+		
+	_model.BasicAck(deliveryArgs.DeliveryTag, false);
+}
+
+// basic message consumer (exchange type - FANOUT) -> multiple queues bound to the same fanout exchange -> Publish / Subscribe pattern
+var _connection = _connectionFactory.CreateConnection();
+var _model = _connection.CreateModel();
+var _model.BasicQos(0, 1, false); // specify if batch or on-at-the-time message consuming
+var _subscription = new Subscription(_model, QueueName, false); // !! subscribing to the fanned out messages
+
+while (Enabled)
+{
+	//Get next message
+	var deliveryArgs = _subscription.Next();
+	//Deserialize message
+	var message = Encoding.Default.GetString(deliveryArgs.Body);
+
+	//Acknowledge message is processed
+	_subscription.Ack(deliveryArgs);
+}
+
+
+// RPC pattern where sender also acts as a receiver (by specifying dynamic response queue, correlationId for the received message etc.)
+
+var _connection = _connectionFactory.CreateConnection();
+var _model = _connection.CreateModel();
+
+var _responseQueue = _model.QueueDeclare().QueueName;
+var	_consumer = new QueueingBasicConsumer(_model);
+var	_model.BasicConsume(_responseQueue, true, _consumer);
+
+var correlationToken = Guid.NewGuid().ToString();
+
+//Setup properties
+var properties = _model.CreateBasicProperties();
+properties.ReplyTo = _responseQueue;
+properties.CorrelationId = correlationToken;
+
+//Serialize
+byte[] messageBuffer = Encoding.Default.GetBytes(message);
+
+//Send
+var timeoutAt = DateTime.Now + timeout;
+_model.BasicPublish("", QueueName, properties, messageBuffer);
+
+//Wait for response
+while (DateTime.Now <= timeoutAt)
+{
+	var deliveryArgs = (BasicDeliverEventArgs)_consumer.Queue.Dequeue();
+	if (deliveryArgs.BasicProperties != null
+		&& deliveryArgs.BasicProperties.CorrelationId == correlationToken)
+	{
+		var response = Encoding.Default.GetString(deliveryArgs.Body);
+		return response;
+	}
+}
+
+// Worker queue pattern -> multiple listening workers, message send to a queue using its name as a Routing Key
+
+
+// More messaging patterns:
+
+1) Routing -> exchange type DIRECT, queues bind to an exchange by name as well as specific Routing Key string value (binding done either in code or via control panel)
+
+- simple producer code
+
+var properties = _model.CreateBasicProperties();
+properties.SetPersistent(true);
+//Serialize
+byte[] messageBuffer = Encoding.Default.GetBytes(message);
+//Send message
+_model.BasicPublish(ExchangeName, routingKey, properties, messageBuffer); -> both exchange name and specific routing key provided here
+
+- simple receiver code 
+
+_connection = _connectionFactory.CreateConnection();
+_model = _connection.CreateModel();
+_model.BasicQos(0, 1, false);
+
+_subscription = new Subscription(_model, QueueName, false);
+
+//Get next message
+var deliveryArgs = _subscription.Next();
+
+//Deserialize message
+var message = Encoding.Default.GetString(deliveryArgs.Body);
+
+//Acknowledge message is processed
+_subscription.Ack(deliveryArgs);
+
+
+2) Topic -> exchange type TOPIC, routing key may contain * [can replace one word], # [can replace zero or more words] and is used when binding the queue to an exchange
+i.e. routing key = special.order.fast might be send to queues expecting *.order.*, *.*.fast, #.fast, special.# etc.
+
+same as above receiver must subscribe to the queue it want to listen to.
+
+
+3) Headers -> exchange type HEADERS, routing key not set, instead special properties will be added (from control panel -> set arguments!)
+- allows setting up an match type -> 'x-match' with values of either 'any' or 'all' (if any header value matches, if all values match)
+- queue is bound to an exchange with specific key-value pair dictionary like parameters object that may include x-match param -> {"x-match" "any", "product"="engine", "color"="black" }
+
+
+4) Scatter Gather
+
+
+
+
+
+
+
+
+
+
+

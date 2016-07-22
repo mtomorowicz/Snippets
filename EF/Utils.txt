@@ -1,0 +1,9 @@
+// allows loading of implicit dependencies without need to actually reference them in calling project, much cleaner !!!
+public static class TypeLoader
+{
+	public static void EnforceImplicitDependencyLoad<T>()
+	{
+		var type = typeof(T);
+		if (type == null) throw new TypeLoadException("Implicit type loading failed");
+	}
+}
