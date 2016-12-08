@@ -1,0 +1,36 @@
+public class ServletService {
+	
+	public String GET_BuildUrl(HttpServletRequest req)
+	{
+		String qryString = req.getQueryString();
+		StringBuffer reqUrl = req.getRequestURL();
+		
+		return qryString != null ? reqUrl.append('?').append(qryString).toString() : reqUrl.toString();
+	}
+	
+	public String POST_RequestPayloadAsString(HttpServletRequest req)
+	{
+		StringBuffer strBuffer = new StringBuffer();
+		String line = null;
+		  
+		try 
+		{
+		    BufferedReader reader = req.getReader();
+		    while ((line = reader.readLine()) != null)
+		    {
+		    	strBuffer.append(line);
+		    }
+		} 
+		catch (Exception e) 
+		{
+			// oops 
+		}
+		
+		return strBuffer.toString();
+	}
+
+}
+
+/------------------------------------------
+
+http://stackoverflow.com/questions/2793150/using-java-net-urlconnection-to-fire-and-handle-http-requests
