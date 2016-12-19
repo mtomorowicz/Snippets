@@ -1,0 +1,23 @@
+Liferay:
+
+main article - https://dev.liferay.com/discover/portal/-/knowledge_base/6-1/roles-and-permissions
+
+!! https://dev.liferay.com/develop/tutorials/-/knowledge_base/6-1/security-and-permissions?notice=1 !!
+http://www.opensource-techblog.com/2014/09/users-site-organization-and-user-group_27.html
+user groups:
+
+http://stackoverflow.com/questions/29677566/how-can-i-get-the-user-site-roles-in-liferay
+https://docs.liferay.com/portal/6.1/javadocs/com/liferay/portal/service/UserGroupRoleLocalServiceUtil.html
+
+user roles (regular only):
+
+https://docs.liferay.com/portal/6.1/javadocs/com/liferay/portal/service/RoleLocalServiceUtil.html
+
+portlet preferences:
+
+http://proliferay.com/portlet-preferences-in-liferay-portal/
+
+from js:
+http://stackoverflow.com/questions/17577886/how-to-set-portlet-preferences-via-javascript
+
+http://stackoverflow.com/questions/36043208/liferay-portlet-how-to-make-ajax-call-to-serveresource-method-with-parameter
