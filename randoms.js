@@ -37,3 +37,34 @@ myApp.service('csvWriterService',
             getCSVDocumentString: getCSVDocumentString
         };
     });
+
+function groupByPropsName(array, propNames){
+    	var map = new Map(),
+    		key = '';
+    	for(var i=0; i<array.length; i++) {
+    		var item = array[i];
+    		key =  keyFromObjectProps(item, propNames);
+    			
+    		if(!map.has(key)) {
+    			map.set(key, { 
+    						   agreement: item['agreement'],
+    						   totalAmountPledgedUSD: item['totalAmountPledgedUSD'],
+    						   marginAmount: item['marginAmount'],
+    						   mid: item['mid'],
+    						   ctid: item['ctid'],
+    						   subItems: [item] 
+    						 });
+    		} else {
+    			map.get(key).subItems.push(item);
+    		}
+    	}
+    	return map;
+    };
+    
+    function keyFromObjectProps(obj, props) {
+    	var key = '';
+    	props.forEach(function(i) { key +=  obj[i]; });
+    	return key;
+    }
+
+
