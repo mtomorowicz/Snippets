@@ -38,33 +38,37 @@ myApp.service('csvWriterService',
         };
     });
 
-function groupByPropsName(array, propNames){
-    	var map = new Map(),
-    		key = '';
-    	for(var i=0; i<array.length; i++) {
-    		var item = array[i];
-    		key =  keyFromObjectProps(item, propNames);
-    			
-    		if(!map.has(key)) {
-    			map.set(key, { 
-    						   agreement: item['agreement'],
-    						   totalAmountPledgedUSD: item['totalAmountPledgedUSD'],
-    						   marginAmount: item['marginAmount'],
-    						   mid: item['mid'],
-    						   ctid: item['ctid'],
-    						   subItems: [item] 
-    						 });
-    		} else {
-    			map.get(key).subItems.push(item);
-    		}
-    	}
-    	return map;
-    };
-    
-    function keyFromObjectProps(obj, props) {
-    	var key = '';
-    	props.forEach(function(i) { key +=  obj[i]; });
-    	return key;
+Array.prototype.groupByPropsName = function(propsToGroupBy, setItemFunc, getItemFunc){
+    var map = new Map();
+    for(var i = 0; i < this.length; i++) {
+        var item = this[i],
+            key =  propsToGroupBy.map(function(prop) { 
+                return item[prop]; 
+            }).join('_');    
+
+        if(!map.has(key)) {
+            map.set(key, setItemFunc ? setItemFunc(item) : [ item ]);
+            continue;
+        } 
+
+        getItemFunc ? getItemFunc(map, key, item) : map.get(key).push(item);
     }
+    return map.toArray();
+};
+
+function setItemFunc(item) {
+    return { 
+        agreement: item['agreement'],
+        totalAmountPledgedUSD: item['totalAmountPledgedUSD'],
+        marginAmount: item['marginAmount'],
+        mid: item['mid'],
+        ctid: item['ctid'],
+        subItems: [item] 
+    };
+}
+
+function getItemFunc(map, key, item) {
+    map.get(key).subItems.push(item);
+}
 
 
